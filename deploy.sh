@@ -145,21 +145,45 @@ if ! command -v asterisk &>/dev/null; then
   cd /usr/src
 
   if [[ ! -d "asterisk-20-current" ]]; then
-    ASTERISK_VER="20.11.0"
-    wget -q "https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-${ASTERISK_VER}.tar.gz" -O asterisk.tar.gz
+    info "Downloading Asterisk 20..."
+
+    # Try the 'current' bundle first (always points to latest 20.x)
+    ASTERISK_URL="https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-20-current.tar.gz"
+    if ! wget --timeout=30 -q "$ASTERISK_URL" -O asterisk.tar.gz; then
+      # Fallback: try specific versions
+      for VER in 20.12.0 20.11.1 20.11.0 20.10.0; do
+        info "Trying Asterisk ${VER}..."
+        if wget --timeout=30 -q "https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-${VER}.tar.gz" -O asterisk.tar.gz; then
+          break
+        fi
+      done
+    fi
+
+    if [[ ! -f "asterisk.tar.gz" ]] || [[ ! -s "asterisk.tar.gz" ]]; then
+      err "Failed to download Asterisk. Check your internet connection."
+    fi
+
     tar xzf asterisk.tar.gz
-    mv asterisk-${ASTERISK_VER} asterisk-20-current
-    rm asterisk.tar.gz
+    # The extracted folder name varies, find it
+    ASTERISK_DIR=$(ls -d asterisk-20* 2>/dev/null | grep -v ".tar.gz" | head -1)
+    if [[ -z "$ASTERISK_DIR" ]]; then
+      err "Failed to extract Asterisk tarball"
+    fi
+    mv "$ASTERISK_DIR" asterisk-20-current
+    rm -f asterisk.tar.gz
+    log "Asterisk source downloaded"
   fi
 
   cd asterisk-20-current
 
   # Install prerequisites
-  contrib/scripts/get_mp3_source.sh 2>/dev/null || true
-  contrib/scripts/install_prereq install 2>/dev/null || true
+  info "Installing Asterisk prerequisites..."
+  contrib/scripts/get_mp3_source.sh || true
+  yes | contrib/scripts/install_prereq install || true
 
   # Configure with PJSIP, ODBC, and codec opus
-  ./configure --with-jansson-bundled --with-pjproject-bundled 2>&1 | tail -5
+  info "Configuring Asterisk (this takes a few minutes)..."
+  ./configure --with-jansson-bundled --with-pjproject-bundled 2>&1 | tail -10
 
   # Select modules
   make menuselect.makeopts
@@ -174,7 +198,8 @@ if ! command -v asterisk &>/dev/null; then
     --enable MOH-OPSOUND-WAV \
     menuselect.makeopts 2>/dev/null || true
 
-  make -j$(nproc) 2>&1 | tail -3
+  info "Compiling Asterisk (this takes 10-15 minutes)..."
+  make -j$(nproc) 2>&1 | tail -5
   make install 2>&1 | tail -3
   make samples 2>&1 | tail -3
   make config 2>&1 | tail -3
