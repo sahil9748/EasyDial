@@ -349,8 +349,14 @@ npm run build 2>&1 | tail -5
 # 9. Run Database Schema & Seed
 # =============================================================
 log "Setting up database schema..."
-PGPASSWORD=$DB_PASS psql -h localhost -U $DB_USER -d $DB_NAME -f "$APP_DIR/server/db/schema.sql" 2>/dev/null || \
+sudo -u postgres psql -d $DB_NAME -f "$APP_DIR/server/db/schema.sql" 2>/dev/null || \
   warn "Schema may already exist (this is OK on re-deploy)"
+
+# Grant permissions on all tables/sequences to app user
+sudo -u postgres psql -d $DB_NAME -c "GRANT ALL ON ALL TABLES IN SCHEMA public TO $DB_USER;" 2>/dev/null
+sudo -u postgres psql -d $DB_NAME -c "GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO $DB_USER;" 2>/dev/null
+sudo -u postgres psql -d $DB_NAME -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO $DB_USER;" 2>/dev/null
+sudo -u postgres psql -d $DB_NAME -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO $DB_USER;" 2>/dev/null
 
 log "Seeding database..."
 cd "$APP_DIR"
