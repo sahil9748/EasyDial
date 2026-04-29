@@ -158,6 +158,48 @@ class AMIClient extends EventEmitter {
     }
   }
 
+  /**
+   * Get SIP registration status for all agent endpoints.
+   * Uses AMI 'PJSIPShowContacts' to find which endpoints have active registrations.
+   * Returns a Map of sipUsername -> { registered: bool, ip: string, rtt: number }
+   */
+  async getSipRegistrationStatus(sipUsernames) {
+    const statusMap = {};
+    // Default all to unregistered
+    for (const sip of sipUsernames) {
+      statusMap[sip] = { registered: false, ip: null, rtt: null };
+    }
+
+    if (!this.authenticated) return statusMap;
+
+    try {
+      // Query each endpoint's contact status individually
+      for (const sip of sipUsernames) {
+        try {
+          // Use CLI command via AMI for reliable results
+          const result = await this.action('Command', { Command: `pjsip show endpoint ${sip}` });
+          const output = result.Output || result.output || '';
+          
+          // Check if contact is registered (look for "Avail" or "Available" in output)
+          if (output.includes('Avail') || output.includes('NonQual') || output.includes('Created')) {
+            statusMap[sip].registered = true;
+            // Try to extract contact URI/IP
+            const contactMatch = output.match(/Contact:\s+\S+\/sip:([^\s>]+)/);
+            if (contactMatch) {
+              statusMap[sip].ip = contactMatch[1];
+            }
+          }
+        } catch {
+          // Individual endpoint query failed, skip
+        }
+      }
+    } catch (err) {
+      logger.error('getSipRegistrationStatus error', err.message);
+    }
+
+    return statusMap;
+  }
+
   disconnect() {
     if (this.socket) {
       this.sendRaw('Action: Logoff\r\n\r\n');

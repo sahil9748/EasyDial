@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, Coffee, LogOut, Clock, Monitor, Copy, Check } from 'lucide-react';
+import { Phone, Coffee, LogOut, Clock, Monitor, Copy, Check, Wifi, WifiOff } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import useAgentStore from '../../store/agentStore';
 import useRealtimeStore from '../../store/realtimeStore';
@@ -18,6 +18,11 @@ export default function AgentPanel() {
   const [copied, setCopied] = useState(null);
 
   const isExternal = agent?.phoneType === 'external' || agent?.phone_type === 'external';
+
+  // Get live SIP registration status from WebSocket stats
+  const mySipUsername = agent?.sipUsername || agent?.sip_username;
+  const sipAgent = stats.sipAgents?.find(a => a.sipUsername === mySipUsername);
+  const sipRegistered = sipAgent?.sipRegistered || false;
 
   const copyToClipboard = (text, field) => {
     navigator.clipboard.writeText(text);
@@ -111,11 +116,21 @@ export default function AgentPanel() {
         <div>
           {isExternal ? (
             <div className="glass-card p-5 space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Monitor className="w-5 h-5 text-primary-400" />
-                <h3 className="font-semibold text-white">External Softphone</h3>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Monitor className="w-5 h-5 text-primary-400" />
+                  <h3 className="font-semibold text-white">External Softphone</h3>
+                </div>
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                  sipRegistered
+                    ? 'bg-success/15 text-success border border-success/30'
+                    : 'bg-danger/15 text-danger border border-danger/30'
+                }`}>
+                  {sipRegistered ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                  {sipRegistered ? 'Registered' : 'Not Registered'}
+                </div>
               </div>
-              <p className="text-xs text-dark-400">Configure your SIP client (Obeam, Zoiper, MicroSIP, Obeam, etc.) with these credentials:</p>
+              <p className="text-xs text-dark-400">Configure your SIP client (Zoiper, MicroSIP, etc.) with these credentials:</p>
 
               <div className="space-y-3">
                 {[

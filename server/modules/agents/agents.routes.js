@@ -8,6 +8,7 @@ router.use(auth);
 
 router.get('/', rbac('admin', 'supervisor'), agentsController.list);
 router.get('/status', agentsController.listStatuses);
+router.get('/sip-status', agentsController.sipStatus);
 router.get('/:id', agentsController.getById);
 router.post('/', rbac('admin'), agentsController.create);
 router.put('/:id', rbac('admin'), agentsController.update);

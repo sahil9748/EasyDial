@@ -10,6 +10,7 @@ const useRealtimeStore = create((set) => ({
     aht: 0,
     avgDuration: 0,
     connectedClients: 0,
+    sipAgents: [],
   },
   agentUpdates: [],
   callEvents: [],

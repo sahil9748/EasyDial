@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { PhoneCall, Users, TrendingUp, Clock, PhoneIncoming, PhoneOutgoing } from 'lucide-react';
+import { PhoneCall, Users, TrendingUp, Clock, PhoneIncoming, PhoneOutgoing, Wifi, WifiOff } from 'lucide-react';
 import api from '../../api/client';
 import useRealtimeStore from '../../store/realtimeStore';
 
@@ -49,7 +49,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Agent Status */}
         <div className="glass-card p-5">
           <h3 className="text-lg font-semibold text-white mb-4">Agent Status</h3>
@@ -68,6 +68,39 @@ export default function Dashboard() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* SIP Phones Status */}
+        <div className="glass-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">SIP Phones</h3>
+            <span className="text-xs text-dark-500">
+              {(stats.sipAgents || []).filter(a => a.sipRegistered).length}/{(stats.sipAgents || []).length} online
+            </span>
+          </div>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {(stats.sipAgents || []).map(a => (
+              <div key={a.id} className="flex items-center justify-between p-2.5 rounded-lg bg-dark-800/40">
+                <div className="flex items-center gap-2.5">
+                  <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                    a.sipRegistered ? 'bg-success shadow-[0_0_6px_rgba(34,197,94,0.5)]' : 'bg-dark-600'
+                  }`} />
+                  <div>
+                    <p className="text-sm font-mono text-dark-200">{a.sipUsername}</p>
+                    <p className="text-[10px] text-dark-500">Ext {a.extension} · {a.phoneType === 'external' ? 'External' : 'WebRTC'}</p>
+                  </div>
+                </div>
+                {a.sipRegistered ? (
+                  <Wifi className="w-3.5 h-3.5 text-success" />
+                ) : (
+                  <WifiOff className="w-3.5 h-3.5 text-dark-600" />
+                )}
+              </div>
+            ))}
+            {(stats.sipAgents || []).length === 0 && (
+              <p className="text-sm text-dark-500 text-center py-4">No agents provisioned</p>
+            )}
           </div>
         </div>
 

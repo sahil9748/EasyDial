@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Pencil, Trash2, X, Phone, Monitor, Headphones } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Phone, Monitor, Headphones, Wifi, WifiOff } from 'lucide-react';
+import useRealtimeStore from '../../store/realtimeStore';
 import api from '../../api/client';
 import toast from 'react-hot-toast';
 
@@ -13,6 +14,12 @@ export default function UsersPage() {
   const [form, setForm] = useState({ username: '', password: '', email: '', firstName: '', lastName: '', role: 'agent' });
   const [agentForm, setAgentForm] = useState({ userId: '', extension: '', phoneType: 'webrtc', maxChannels: 1 });
   const [editingAgent, setEditingAgent] = useState(null);
+  const sipAgents = useRealtimeStore((s) => s.stats.sipAgents || []);
+
+  const getSipStatus = (sipUsername) => {
+    const sa = sipAgents.find(a => a.sipUsername === sipUsername);
+    return sa?.sipRegistered || false;
+  };
 
   useEffect(() => { loadUsers(); loadAgents(); }, []);
 
@@ -159,7 +166,17 @@ export default function UsersPage() {
                     )}
                   </td>
                   <td className="py-3 px-4 font-mono text-dark-400 text-xs">
-                    {agent ? `${agent.sip_username} · Ext ${agent.extension}` : '—'}
+                    {agent ? (
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getSipStatus(agent.sip_username) ? 'bg-success animate-pulse' : 'bg-dark-600'}`} />
+                        <span>{agent.sip_username} · Ext {agent.extension}</span>
+                        {getSipStatus(agent.sip_username) ? (
+                          <Wifi className="w-3 h-3 text-success flex-shrink-0" />
+                        ) : (
+                          <WifiOff className="w-3 h-3 text-dark-600 flex-shrink-0" />
+                        )}
+                      </div>
+                    ) : '—'}
                   </td>
                   <td className="py-3 px-4">{u.active ? <span className="badge-success">Active</span> : <span className="badge-danger">Disabled</span>}</td>
                   <td className="py-3 px-4 text-right space-x-1">

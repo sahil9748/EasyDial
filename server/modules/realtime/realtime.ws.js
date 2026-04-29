@@ -109,11 +109,14 @@ class RealtimeServer {
 
   async broadcastStats() {
     try {
+      const amiClient = require('../../ami/amiClient');
+
       // Gather live stats
       const [
         activeCallsResult,
         agentStatsResult,
         todayStatsResult,
+        agentsResult,
       ] = await Promise.all([
         query(`SELECT COUNT(*) as count FROM calls WHERE status IN ('originated','ringing','answered','bridged')`),
         query(`SELECT status, COUNT(*) as count FROM agents GROUP BY status`),
@@ -123,6 +126,7 @@ class RealtimeServer {
                  COALESCE(AVG(billsec) FILTER (WHERE billsec > 0), 0) as avg_handle_time,
                  COALESCE(AVG(duration) FILTER (WHERE duration > 0), 0) as avg_duration
                FROM calls WHERE started_at >= CURRENT_DATE`),
+        query(`SELECT id, sip_username, extension, phone_type FROM agents`),
       ]);
 
       const activeCalls = parseInt(activeCallsResult.rows[0].count, 10);
@@ -134,6 +138,21 @@ class RealtimeServer {
       const answeredCalls = parseInt(today.answered_calls, 10);
       const asr = totalCalls > 0 ? Math.round((answeredCalls / totalCalls) * 100) : 0;
 
+      // Get live SIP registration status from Asterisk
+      let sipStatus = {};
+      if (amiClient.authenticated && agentsResult.rows.length > 0) {
+        const sipUsernames = agentsResult.rows.map(r => r.sip_username);
+        sipStatus = await amiClient.getSipRegistrationStatus(sipUsernames);
+      }
+
+      const sipAgents = agentsResult.rows.map(a => ({
+        id: a.id,
+        sipUsername: a.sip_username,
+        extension: a.extension,
+        phoneType: a.phone_type,
+        sipRegistered: sipStatus[a.sip_username]?.registered || false,
+      }));
+
       const stats = {
         activeCalls,
         agentStats,
@@ -143,6 +162,7 @@ class RealtimeServer {
         aht: Math.round(parseFloat(today.avg_handle_time)),
         avgDuration: Math.round(parseFloat(today.avg_duration)),
         connectedClients: this.clients.size,
+        sipAgents,
       };
 
       this.broadcastToAll({ type: 'stats', data: stats });

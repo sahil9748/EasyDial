@@ -2,6 +2,7 @@ const { query, getClient } = require('../../db/pool');
 const { redis } = require('../../db/redis');
 const logger = require('../../utils/logger');
 const { randomString, paginationParams } = require('../../utils/helpers');
+const amiClient = require('../../ami/amiClient');
 
 const agentsController = {
   async list(req, res) {
@@ -330,6 +331,30 @@ const agentsController = {
       res.json({ message: 'Agent logged out' });
     } catch (err) {
       logger.error('Agent logout error', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+
+  async sipStatus(req, res) {
+    try {
+      const result = await query(
+        'SELECT id, sip_username, extension, phone_type FROM agents'
+      );
+      const sipUsernames = result.rows.map(r => r.sip_username);
+      const sipStatus = await amiClient.getSipRegistrationStatus(sipUsernames);
+
+      const agents = result.rows.map(a => ({
+        id: a.id,
+        sipUsername: a.sip_username,
+        extension: a.extension,
+        phoneType: a.phone_type,
+        sipRegistered: sipStatus[a.sip_username]?.registered || false,
+        sipIp: sipStatus[a.sip_username]?.ip || null,
+      }));
+
+      res.json({ agents });
+    } catch (err) {
+      logger.error('SIP status error', err);
       res.status(500).json({ error: 'Internal server error' });
     }
   },
