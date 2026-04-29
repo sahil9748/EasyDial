@@ -30,6 +30,20 @@ class AMIClient extends EventEmitter {
 
     this.socket.on('data', (data) => {
       this.buffer += data;
+
+      // The AMI banner "Asterisk Call Manager/X.X.X\r\n" uses a single \r\n,
+      // NOT the double \r\n\r\n that separates normal AMI messages.
+      // Detect it early and trigger login before normal parsing.
+      if (!this.authenticated && this.buffer.includes('Asterisk Call Manager')) {
+        const bannerEnd = this.buffer.indexOf('\r\n');
+        if (bannerEnd !== -1) {
+          // Remove banner from buffer
+          this.buffer = this.buffer.substring(bannerEnd + 2);
+          logger.info('AMI banner received, authenticating...');
+          this.login();
+        }
+      }
+
       this.processBuffer();
     });
 
@@ -62,12 +76,6 @@ class AMIClient extends EventEmitter {
     for (const msg of messages) {
       if (!msg.trim()) continue;
       const parsed = this.parseMessage(msg);
-
-      if (parsed['Asterisk Call Manager']) {
-        // Banner line - now authenticate
-        this.login();
-        continue;
-      }
 
       if (parsed.Response) {
         // Handle action response
