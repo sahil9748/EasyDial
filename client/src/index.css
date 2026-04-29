@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { @apply border-dark-700; }
+  body {
+    @apply bg-dark-950 text-dark-100 font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-dark-900; }
+  ::-webkit-scrollbar-thumb { @apply bg-dark-600 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-dark-500; }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-dark-800/60 backdrop-blur-md border border-dark-700/50 rounded-xl;
+  }
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300 hover:bg-dark-800/80 hover:border-dark-600/50 hover:shadow-lg hover:shadow-primary-500/5;
+  }
+  .btn-primary {
+    @apply px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-medium
+           transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed
+           shadow-lg shadow-primary-600/20 hover:shadow-primary-500/30;
+  }
+  .btn-secondary {
+    @apply px-4 py-2 bg-dark-700 hover:bg-dark-600 text-dark-200 rounded-lg font-medium
+           transition-all duration-200 active:scale-95 border border-dark-600;
+  }
+  .btn-danger {
+    @apply px-4 py-2 bg-danger/20 hover:bg-danger/30 text-danger rounded-lg font-medium
+           transition-all duration-200 active:scale-95 border border-danger/30;
+  }
+  .btn-success {
+    @apply px-4 py-2 bg-success/20 hover:bg-success/30 text-success rounded-lg font-medium
+           transition-all duration-200 active:scale-95 border border-success/30;
+  }
+  .input-field {
+    @apply w-full px-3 py-2 bg-dark-900 border border-dark-600 rounded-lg
+           text-dark-100 placeholder-dark-500 focus:outline-none focus:ring-2
+           focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200;
+  }
+  .select-field {
+    @apply input-field appearance-none cursor-pointer;
+  }
+  .label {
+    @apply block text-sm font-medium text-dark-300 mb-1;
+  }
+  .stat-value {
+    @apply text-3xl font-bold bg-gradient-to-r from-primary-400 to-accent bg-clip-text text-transparent;
+  }
+  .stat-label {
+    @apply text-xs font-medium text-dark-400 uppercase tracking-wider;
+  }
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-success { @apply badge bg-success/20 text-success; }
+  .badge-warning { @apply badge bg-warning/20 text-warning; }
+  .badge-danger { @apply badge bg-danger/20 text-danger; }
+  .badge-info { @apply badge bg-primary-500/20 text-primary-400; }
+  .badge-neutral { @apply badge bg-dark-600 text-dark-300; }
+  .table-row {
+    @apply border-b border-dark-700/50 hover:bg-dark-800/40 transition-colors;
+  }
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-dark-400 hover:text-dark-100
+           hover:bg-dark-800/60 transition-all duration-200 text-sm font-medium;
+  }
+  .sidebar-link-active {
+    @apply sidebar-link text-primary-400 bg-primary-500/10 hover:bg-primary-500/15;
+  }
+}
