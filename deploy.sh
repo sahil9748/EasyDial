@@ -53,6 +53,7 @@ else
 fi
 
 # --- Config ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="/opt/callcenter"
 DB_NAME="callcenter"
 DB_USER="callcenter"
@@ -304,10 +305,10 @@ fi
 log "Deploying application..."
 mkdir -p "$APP_DIR"
 
-# Copy project files
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Copy project files (SCRIPT_DIR resolved at top of script)
 cp -r "$SCRIPT_DIR"/* "$APP_DIR/" 2>/dev/null || true
 cp "$SCRIPT_DIR"/.env.example "$APP_DIR/.env.example" 2>/dev/null || true
+cp "$SCRIPT_DIR"/.gitignore "$APP_DIR/.gitignore" 2>/dev/null || true
 
 # Create .env
 cat > "$APP_DIR/.env" << EOF
